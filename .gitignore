@@ -1,0 +1,92 @@
+# 敏感配置文件
+backend/config.py
+.env
+.env.local
+.env.*.local
+
+# Python
+**__pycache__**
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE和编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# 数据库文件
+backend/data/*.db
+backend/data/*.db-shm
+backend/data/*.db-wal
+backend/data/*.sqlite
+backend/data/*.sqlite3
+backend/data/kuzu/*.db
+backend/data/kuzu/*.db.*
+backend/data/milvus/*.db
+backend/data/milvus/*.lock
+backend/data/milvus/*.wal
+
+# 日志文件
+*.log
+logs/
+*.log.*
+
+# 临时文件
+*.tmp
+*.bak
+.cache/
+*.pid
+
+# 测试数据
+tests/*.log
+tests/.pytest_cache/
+tests/__pycache__/
+.coverage
+htmlcov/
+.pytest_cache/
+
+# 操作系统
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 其他
+*.pem
+*.key
+*.crt
+secrets/
+credentials/
+
+# 测试脚本
+tests/*
