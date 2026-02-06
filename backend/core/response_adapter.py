@@ -2,7 +2,7 @@
 响应适配器 - 转换API响应格式
 """
 from typing import Dict, Any, List, Optional, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 from models.schemas import (
     ChatCompletionResponse,
@@ -58,7 +58,7 @@ class ResponseAdapter:
         # 构建响应
         adapted_response = ChatCompletionResponse(
             id=response.get("id", ""),
-            created=int(datetime.utcnow().timestamp()),
+            created=int(datetime.now(timezone.utc).timestamp()),
             model=model,
             choices=choices,
             usage=usage

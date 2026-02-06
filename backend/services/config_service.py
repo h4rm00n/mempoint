@@ -2,7 +2,7 @@
 配置服务
 """
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from models.database import SessionLocal, Configuration
 from models.schemas import ConfigurationCreate, ConfigurationResponse
@@ -128,8 +128,8 @@ class ConfigService:
             else:
                 # 更新现有配置
                 config.set_value(config_value)
-                config.updated_at = datetime.utcnow()
-            
+                config.updated_at = datetime.now()  # 使用本地时间（北京时间）
+
             self.db.commit()
             self.db.refresh(config)
             

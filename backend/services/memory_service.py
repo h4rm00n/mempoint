@@ -14,7 +14,7 @@ from memory.memory_manager import memory_manager, MemoryManager, get_db
 from memory.retrieval import retrieval_strategy
 from core.embedding_client import embedding_client
 from utils.logger import logger
-from utils.helpers import generate_id, extract_entities
+from utils.helpers import generate_id
 
 
 @contextmanager
@@ -78,25 +78,6 @@ class MemoryService:
 
             if not success:
                 raise Exception("Failed to insert vector")
-
-            # 如果有实体ID，创建或更新图谱节点
-            if memory_data.entity_id:
-                await graph_store.create_entity(
-                    name=memory_data.entity_id,
-                    type="default",
-                    description=content[:200]  # 限制描述长度
-                )
-
-                # 提取并创建实体关系
-                entities = extract_entities(content)
-                for entity in entities:
-                    if entity != memory_data.entity_id:
-                        await graph_store.create_relation(
-                            from_entity=memory_data.entity_id,
-                            to_entity=entity,
-                            relation_type="RELATED_TO",
-                            weight=1.0
-                        )
 
             # 创建记忆记录（包含event_time）
             memory = await memory_manager.create_memory(
@@ -189,19 +170,6 @@ class MemoryService:
                 # 更新记忆记录
                 memory.content = memory_data.content
 
-                # 重新计算评分（相似度为1.0，因为是与自身比较）
-                from utils.helpers import calculate_similarity_score, get_current_timestamp_ms
-                new_score = calculate_similarity_score(
-                    similarity=1.0,
-                    access_count=memory.access_count,
-                    max_access_count=100,
-                    last_accessed_at=get_current_timestamp_ms(),
-                    created_at=int(memory.created_at.timestamp() * 1000),
-                    lambda_decay=0.0001,
-                    graph_score=0.0
-                )
-                memory.score = new_score
-
             # 更新元数据
             if memory_data.metadata is not None:
                 memory.set_metadata(memory_data.metadata)
@@ -214,7 +182,7 @@ class MemoryService:
                 self.db.rollback()
                 raise commit_error
 
-            logger.info(f"Updated memory: id={memory_id}, score={memory.score}")
+            logger.info(f"Updated memory: id={memory_id}")
             return memory
 
         except Exception as e:

@@ -2,7 +2,7 @@
 Models API
 """
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, status, Header
 
 from config import settings
@@ -70,7 +70,7 @@ async def list_models(authorization: Optional[str] = Header(None)):
                 llm_models = [{
                     "id": settings.LLM_MODEL,
                     "object": "model",
-                    "created": int(datetime.utcnow().timestamp()),
+                    "created": int(datetime.now(timezone.utc).timestamp()),
                     "owned_by": "llm_provider"
                 }]
 

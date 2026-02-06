@@ -146,29 +146,6 @@ def normalize_text(text: str) -> str:
     return text
 
 
-def extract_entities(text: str) -> List[str]:
-    """
-    从文本中提取实体（简化版）
-    
-    Args:
-        text: 输入文本
-    
-    Returns:
-        实体列表
-    """
-    # 这里是一个简化的实现
-    # 实际应用中可以使用更复杂的NLP模型
-    entities = []
-    
-    # 简单的规则：提取大写开头的词
-    words = text.split()
-    for word in words:
-        if word and word[0].isupper() and len(word) > 1:
-            entities.append(word)
-    
-    return list(set(entities))  # 去重
-
-
 def merge_dicts(*dicts: Dict[str, Any]) -> Dict[str, Any]:
     """
     合并多个字典

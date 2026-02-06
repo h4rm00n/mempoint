@@ -4,7 +4,7 @@
 from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 
 from config import settings
@@ -29,8 +29,8 @@ class Persona(Base):
     id = Column(String, primary_key=True, index=True)  # 记忆体ID/名称
     description = Column(String, nullable=True)  # 记忆体描述
     system_prompt = Column(Text, nullable=True)  # 记忆体专属的system prompt
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now())  # 使用本地时间（北京时间）
+    updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())  # 使用本地时间（北京时间）
 
 
 class Memory(Base):
@@ -43,11 +43,10 @@ class Memory(Base):
     entity_id = Column(String, nullable=True, index=True)  # KùzuDB中的实体ID
     type = Column(String, nullable=False, index=True)  # 'long_term'
     content = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, index=True)  # 记录时间（系统当前时间）
+    created_at = Column(DateTime, default=lambda: datetime.now(), index=True)  # 记录时间（系统当前时间，本地时间）
     event_time = Column(DateTime, nullable=True, index=True)  # 事件时间（LLM提取，用户提到的具体时间）
-    last_accessed_at = Column(DateTime, default=datetime.utcnow, index=True)
+    last_accessed_at = Column(DateTime, default=lambda: datetime.now(), index=True)  # 使用本地时间（北京时间）
     access_count = Column(Integer, default=0)
-    score = Column(Float, default=0.0)
     meta_data = Column(Text, nullable=True)  # JSON格式的其他元数据
 
     # 添加复合索引
@@ -78,8 +77,8 @@ class Configuration(Base):
     config_key = Column(String, nullable=False, index=True)  # 配置键
     config_value = Column(Text, nullable=False)  # 配置值（JSON格式）
     description = Column(Text, nullable=True)  # 配置描述
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now())  # 使用本地时间（北京时间）
+    updated_at = Column(DateTime, default=lambda: datetime.now(), onupdate=lambda: datetime.now())  # 使用本地时间（北京时间）
 
     # 添加复合索引
     __table_args__ = (

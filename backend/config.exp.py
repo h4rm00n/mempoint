@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 from typing import Optional, Dict, Any
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Settings(BaseSettings):
@@ -79,6 +79,7 @@ class Settings(BaseSettings):
 4. 时间：
    - event_time：事件发生时间（从对话内容中提取，如"昨天"、"上周"、"2024年1月15日"）
    - 时间格式要求：精确到分钟（ISO 8601格式：YYYY-MM-DDTHH:MM:SS）
+   - 重要：event_time必须使用与当前时间相同的时区（北京时间），不要转换为UTC或其他时区
    - 如果对话中没有提到具体时间，event_time为null
 
 时间参考：
@@ -97,7 +98,7 @@ class Settings(BaseSettings):
     MEMORY_SCORE_ACCESS_WEIGHT: float = 0.3
     MEMORY_SCORE_RECENCY_WEIGHT: float = 0.2
     MEMORY_SCORE_GRAPH_WEIGHT: float = 0.1
-    MEMORY_RECENCY_DECAY_LAMBDA: float = 0.0001  # 毫秒级衰减系数
+    MEMORY_RECENCY_DECAY_LAMBDA: float = 0.000001  # 毫秒级衰减系数（调整后：1小时后评分≈0.69，1天后≈0.48，1周后≈0.23）
 
     # Persona Configuration
     DEFAULT_PERSONA_ID: str = "默认助手"  # 默认记忆体ID/名称
@@ -250,8 +251,8 @@ def initialize_configurations():
                 config_key=config_key,
                 config_value=json.dumps(config_data["value"]),
                 description=config_data["description"],
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(),  # 使用本地时间（北京时间）
+                updated_at=datetime.now()  # 使用本地时间（北京时间）
             )
             db.add(config)
             logger.info(f"Initialized configuration: {config_key}")
@@ -315,22 +316,22 @@ def update_configuration_in_db(config_key: str, config_value: Dict[str, Any]) ->
 
         if config:
             config.set_value(config_value)
-            config.updated_at = datetime.utcnow()
+            config.updated_at = datetime.now()  # 使用本地时间（北京时间）
             logger.info(f"Updated configuration: {config_key}")
         else:
             # 创建新配置
             from utils.helpers import generate_id
             default_configs = get_default_configurations()
             description = default_configs.get(config_key, {}).get("description", "")
-            
+
             config = Configuration(
                 id=generate_id(),
                 user_id="system",
                 config_key=config_key,
                 config_value=json.dumps(config_value),
                 description=description,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=datetime.now(),  # 使用本地时间（北京时间）
+                updated_at=datetime.now()  # 使用本地时间（北京时间）
             )
             db.add(config)
             logger.info(f"Created configuration: {config_key}")

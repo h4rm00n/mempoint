@@ -2,7 +2,7 @@
 记忆体服务
 """
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from models.database import SessionLocal, Persona, Memory
 from models.schemas import PersonaCreate, PersonaUpdate, PersonaResponse
@@ -113,7 +113,7 @@ class PersonaService:
             if persona_data.system_prompt is not None:
                 persona.system_prompt = persona_data.system_prompt
 
-            persona.updated_at = datetime.utcnow()
+            persona.updated_at = datetime.now()  # 使用本地时间（北京时间）
 
             self.db.commit()
             self.db.refresh(persona)

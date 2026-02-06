@@ -63,7 +63,6 @@ class MemoryResponse(MemoryBase):
     created_at: datetime
     last_accessed_at: datetime
     access_count: int
-    score: float
     meta_data: Optional[str] = None  # 从 SQLAlchemy 模型读取的 JSON 字符串
 
     @computed_field
@@ -159,7 +158,6 @@ class MemorySearchResult(BaseModel):
     id: str
     content: str
     type: str
-    score: float
     similarity: float
     created_at: datetime
     last_accessed_at: datetime

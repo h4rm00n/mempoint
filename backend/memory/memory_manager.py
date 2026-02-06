@@ -2,7 +2,7 @@
 记忆管理器
 """
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import contextmanager
 import threading
 
@@ -67,11 +67,10 @@ class MemoryManager:
                 entity_id=entity_id,
                 type=type,
                 content=content,
-                created_at=datetime.utcnow(),
+                created_at=datetime.now(),  # 使用本地时间（北京时间）
                 event_time=event_time,  # 新增
-                last_accessed_at=datetime.utcnow(),
-                access_count=0,
-                score=0.0
+                last_accessed_at=datetime.now(),  # 使用本地时间（北京时间）
+                access_count=0
             )
 
             if metadata:
@@ -120,45 +119,18 @@ class MemoryManager:
             memory = self.db.query(Memory).filter(Memory.id == memory_id).first()
             if not memory:
                 return False
-            
-            memory.last_accessed_at = datetime.utcnow()
+
+            memory.last_accessed_at = datetime.now()  # 使用本地时间（北京时间）
             memory.access_count += 1
-            
+
             self.db.commit()
-            
+
             logger.debug(f"Updated memory access: id={memory_id}, count={memory.access_count}")
             return True
             
         except Exception as e:
             self.db.rollback()
             logger.error(f"Failed to update memory access: {e}")
-            return False
-    
-    async def update_memory_score(self, memory_id: str, score: float) -> bool:
-        """
-        更新记忆的评分
-        
-        Args:
-            memory_id: 记忆ID
-            score: 新的评分
-        
-        Returns:
-            是否成功
-        """
-        try:
-            memory = self.db.query(Memory).filter(Memory.id == memory_id).first()
-            if not memory:
-                return False
-            
-            memory.score = score
-            self.db.commit()
-            
-            logger.debug(f"Updated memory score: id={memory_id}, score={score}")
-            return True
-            
-        except Exception as e:
-            self.db.rollback()
-            logger.error(f"Failed to update memory score: {e}")
             return False
     
     async def delete_memory(self, memory_id: str) -> bool:
