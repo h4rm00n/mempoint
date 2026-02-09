@@ -11,7 +11,7 @@ import os
 from config import settings, initialize_configurations, initialize_default_persona
 from models.database import init_db
 from utils.logger import logger
-from api import chat, completions, models
+from api import chat, completions, models, graph
 
 
 # 动态导入config模块
@@ -48,6 +48,15 @@ try:
 except ImportError:
     mcp_router = None
     logger.warning("Failed to import mcp module")
+
+
+# 动态导入graph模块
+try:
+    graph_module = importlib.import_module("api.graph")
+    graph_router = graph_module.router
+except ImportError:
+    graph_router = None
+    logger.warning("Failed to import graph module")
 
 
 # 创建FastAPI应用
@@ -88,6 +97,8 @@ if persona_router:
     app.include_router(persona_router, prefix=settings.API_V1_STR)
 if mcp_router:
     app.include_router(mcp_router, prefix=settings.API_V1_STR)
+if graph_router:
+    app.include_router(graph_router, prefix=settings.API_V1_STR)
 if config_router:
     app.include_router(config_router, prefix=settings.API_V1_STR)
 

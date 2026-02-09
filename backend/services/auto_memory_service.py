@@ -197,9 +197,10 @@ class AutoMemoryService:
                         await graph_store.create_entity(
                             name=entity.get("name", ""),
                             type=entity.get("type", "unknown"),
+                            persona_id=persona_id,
                             description=f"Auto-extracted entity from conversation"
                         )
-                        logger.info(f"Created entity: {entity.get('name', '')}")
+                        logger.info(f"Created entity: {entity.get('name', '')} for persona: {persona_id}")
                     except Exception as e:
                         logger.error(f"Failed to create entity: {e}")
 
@@ -210,9 +211,10 @@ class AutoMemoryService:
                             from_entity=relation.get("from", ""),
                             to_entity=relation.get("to", ""),
                             relation_type=relation.get("type", "RELATED_TO"),
+                            persona_id=persona_id,
                             weight=1.0
                         )
-                        logger.info(f"Created relation: {relation.get('from', '')} --{relation.get('type', '')}--> {relation.get('to', '')}")
+                        logger.info(f"Created relation: {relation.get('from', '')} --{relation.get('type', '')}--> {relation.get('to', '')} for persona: {persona_id}")
                     except Exception as e:
                         logger.error(f"Failed to create relation: {e}")
 

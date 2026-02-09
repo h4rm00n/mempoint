@@ -146,9 +146,10 @@ class GraphStore:
                 name STRING,
                 type STRING,
                 description STRING,
+                persona_id STRING,
                 created_at INT64,
                 last_accessed_at INT64,
-                PRIMARY KEY (name)
+                PRIMARY KEY (name, persona_id)
             )
         """)
         
@@ -178,6 +179,7 @@ class GraphStore:
         self.conn.execute(f"""
             CREATE REL TABLE IF NOT EXISTS {settings.KUZU_REL_TABLE_RELATED_TO}(
                 FROM {settings.KUZU_NODE_TABLE_ENTITY} TO {settings.KUZU_NODE_TABLE_ENTITY},
+                persona_id STRING,
                 weight DOUBLE,
                 created_at INT64
             )
@@ -197,6 +199,7 @@ class GraphStore:
         self,
         name: str,
         type: str,
+        persona_id: str,
         description: Optional[str] = None
     ) -> bool:
         """
@@ -205,6 +208,7 @@ class GraphStore:
         Args:
             name: 实体名称
             type: 实体类型
+            persona_id: 记忆体ID
             description: 实体描述
 
         Returns:
@@ -228,10 +232,11 @@ class GraphStore:
             # 使用转义后的字符串
             escaped_name = _escape_string(name)
             escaped_type = _escape_string(type)
+            escaped_persona_id = _escape_string(persona_id)
             escaped_description = _escape_string(description)
 
             self.conn.execute(f"""
-                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_name}'}})
+                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_name}', persona_id: '{escaped_persona_id}'}})
                 ON CREATE SET
                     e.type = '{escaped_type}',
                     e.description = '{escaped_description}',
@@ -344,6 +349,7 @@ class GraphStore:
         from_entity: str,
         to_entity: str,
         relation_type: str,
+        persona_id: str,
         weight: Optional[float] = None
     ) -> bool:
         """
@@ -353,6 +359,7 @@ class GraphStore:
             from_entity: 起始实体名称
             to_entity: 目标实体名称
             relation_type: 关系类型
+            persona_id: 记忆体ID
             weight: 关系权重
 
         Returns:
@@ -377,6 +384,7 @@ class GraphStore:
             # 使用转义后的字符串
             escaped_from_entity = _escape_string(from_entity)
             escaped_to_entity = _escape_string(to_entity)
+            escaped_persona_id = _escape_string(persona_id)
 
             # 降级处理：将未知的关系类型映射为RELATED_TO
             if relation_type not in [settings.KUZU_REL_TABLE_RELATED_TO, settings.KUZU_REL_TABLE_BELONGS_TO]:
@@ -385,16 +393,17 @@ class GraphStore:
 
             if relation_type == settings.KUZU_REL_TABLE_RELATED_TO:
                 self.conn.execute(f"""
-                    MERGE (e1:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}'}})
-                    MERGE (e2:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_to_entity}'}})
+                    MERGE (e1:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}', persona_id: '{escaped_persona_id}'}})
+                    MERGE (e2:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_to_entity}', persona_id: '{escaped_persona_id}'}})
                     MERGE (e1)-[r:{settings.KUZU_REL_TABLE_RELATED_TO}]->(e2)
                     ON CREATE SET
+                        r.persona_id = '{escaped_persona_id}',
                         r.weight = {weight or 0.0},
                         r.created_at = {current_time}
                 """)
             elif relation_type == settings.KUZU_REL_TABLE_BELONGS_TO:
                 self.conn.execute(f"""
-                    MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}'}})
+                    MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}', persona_id: '{escaped_persona_id}'}})
                     MERGE (c:{settings.KUZU_NODE_TABLE_CONCEPT} {{name: '{escaped_to_entity}'}})
                     MERGE (e)-[r:{settings.KUZU_REL_TABLE_BELONGS_TO}]->(c)
                     ON CREATE SET r.created_at = {current_time}
@@ -455,6 +464,7 @@ class GraphStore:
     async def query_entity(
         self,
         entity_name: str,
+        persona_id: str,
         max_depth: int = 2
     ) -> Dict[str, Any]:
         """
@@ -462,6 +472,7 @@ class GraphStore:
 
         Args:
             entity_name: 实体名称
+            persona_id: 记忆体ID
             max_depth: 最大查询深度
 
         Returns:
@@ -479,10 +490,11 @@ class GraphStore:
         try:
             # 使用转义后的字符串
             escaped_entity_name = _escape_string(entity_name)
+            escaped_persona_id = _escape_string(persona_id)
 
             # 查询实体及其关联
             result = self.conn.execute(f"""
-                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_entity_name}'}})
+                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_entity_name}', persona_id: '{escaped_persona_id}'}})
                 CALL (e) *1..{max_depth} {{bfs: true}} (related)
                 RETURN e, related
             """)

@@ -38,6 +38,17 @@
             />
           </el-select>
         </el-form-item>
+        <el-form-item label="查询深度">
+          <el-select
+            v-model="filterForm.maxDepth"
+            placeholder="选择深度"
+            @change="loadGraphData"
+          >
+            <el-option label="1层" :value="1" />
+            <el-option label="2层" :value="2" />
+            <el-option label="3层" :value="3" />
+          </el-select>
+        </el-form-item>
       </el-form>
     </el-card>
 
@@ -57,11 +68,22 @@
           <el-descriptions-item label="类型">
             <el-tag>{{ graphStore.selectedNode.type }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="大小">
-            {{ graphStore.selectedNode.size }}
+          <el-descriptions-item label="描述" v-if="graphStore.selectedNode.description">
+            {{ graphStore.selectedNode.description }}
           </el-descriptions-item>
         </el-descriptions>
       </el-card>
+      
+      <!-- 图例 -->
+      <div class="graph-legend">
+        <div class="legend-title">图例</div>
+        <div class="legend-items">
+          <div class="legend-item" v-for="(color, type) in typeColors" :key="type">
+            <span class="legend-color" :style="{ backgroundColor: color }"></span>
+            <span class="legend-label">{{ typeLabels[type] || type }}</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -70,20 +92,39 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useGraphStore } from '../stores/graph'
-import { useMemoryStore } from '../stores/memory'
 import { usePersonaStore } from '../stores/persona'
 import { Refresh, Download, Search, Close } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const graphStore = useGraphStore()
-const memoryStore = useMemoryStore()
 const personaStore = usePersonaStore()
 
 const graphRef = ref<HTMLElement>()
 const chartInstance = ref<echarts.ECharts>()
 const filterForm = ref({
-  persona_id: ''
+  persona_id: '',
+  maxDepth: 2
 })
+
+// 实体类型颜色映射
+const typeColors: Record<string, string> = {
+  'person': '#409EFF',
+  'location': '#67C23A',
+  'organization': '#E6A23C',
+  'event': '#F56C6C',
+  'concept': '#909399',
+  'unknown': '#C0C4CC'
+}
+
+// 实体类型中文标签
+const typeLabels: Record<string, string> = {
+  'person': '人物',
+  'location': '地点',
+  'organization': '组织',
+  'event': '事件',
+  'concept': '概念',
+  'unknown': '未知'
+}
 
 onMounted(async () => {
   await personaStore.fetchPersonas()
@@ -99,11 +140,12 @@ onBeforeUnmount(() => {
 })
 
 async function loadGraphData() {
-  graphStore.loading = true
-  await memoryStore.fetchMemories(filterForm.value)
-  graphStore.setGraphData(memoryStore.memories)
+  if (!filterForm.value.persona_id) {
+    ElMessage.warning('请先选择记忆体')
+    return
+  }
+  await graphStore.fetchGraphData(filterForm.value.persona_id, undefined, filterForm.value.maxDepth)
   renderGraph()
-  graphStore.loading = false
 }
 
 function renderGraph() {
@@ -122,13 +164,29 @@ function renderGraph() {
       symbolSize: node.size,
       itemStyle: {
         color: node.color
-      }
+      },
+      // 添加自定义数据
+      type: node.type,
+      description: node.description
     }
   })
 
   const option = {
     tooltip: {
-      formatter: (params: any) => params.name
+      formatter: (params: any) => {
+        if (params.dataType === 'node') {
+          const typeLabel = typeLabels[params.data.type] || params.data.type
+          let tooltip = `<strong>${params.name}</strong><br/>`
+          tooltip += `<span style="display:inline-block;width:10px;height:10px;background-color:${params.color};margin-right:5px;"></span>${typeLabel}`
+          if (params.data.description) {
+            tooltip += `<br/><small>${params.data.description}</small>`
+          }
+          return tooltip
+        } else if (params.dataType === 'edge') {
+          return `${params.data.source} --[${params.data.name}]--> ${params.data.target}`
+        }
+        return params.name
+      }
     },
     series: [
       {
@@ -140,21 +198,29 @@ function renderGraph() {
         label: {
           show: true,
           position: 'right',
-          formatter: '{b}'
+          formatter: '{b}',
+          fontSize: 12
+        },
+        edgeLabel: {
+          show: true,
+          formatter: '{c}',
+          fontSize: 10
         },
         lineStyle: {
           color: 'source',
-          curveness: 0.3
+          curveness: 0.3,
+          width: 2
         },
         emphasis: {
           focus: 'adjacency',
           lineStyle: {
-            width: 10
+            width: 4
           }
         },
         force: {
           repulsion: 1000,
-          edgeLength: 100
+          edgeLength: 100,
+          gravity: 0.1
         }
       }
     ]
@@ -163,9 +229,11 @@ function renderGraph() {
   chartInstance.value.setOption(option)
 
   chartInstance.value.on('click', (params: any) => {
-    const node = graphStore.nodes.find((n) => n.id === params.data.id)
-    if (node) {
-      graphStore.setSelectedNode(node)
+    if (params.dataType === 'node') {
+      const node = graphStore.nodes.find((n) => n.id === params.data.id)
+      if (node) {
+        graphStore.setSelectedNode(node)
+      }
     }
   })
 }
@@ -194,8 +262,7 @@ function handleSearch() {
         {
           data: searchData
         }
-      ]
-    })
+      ])
   } else {
     renderGraph()
   }
@@ -267,6 +334,7 @@ function exportGraph() {
   right: 20px;
   width: 300px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
 }
 
 .card-header {
@@ -277,5 +345,46 @@ function exportGraph() {
 
 .card-header h3 {
   margin: 0;
+}
+
+.graph-legend {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.legend-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.legend-label {
+  color: #606266;
 }
 </style>
