@@ -22,7 +22,7 @@
               <el-icon :size="20"><User /></el-icon>
               {{ persona.name || persona.id }}
             </div>
-            <el-dropdown @command="(cmd) => handleCommand(cmd, persona.id)">
+            <el-dropdown @command="(cmd: string) => handleCommand(cmd, persona.id)">
               <el-button circle :icon="MoreFilled" />
               <template #dropdown>
                 <el-dropdown-menu>
@@ -90,7 +90,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePersonaStore } from '../stores/persona'
-import type { PersonaCreate, PersonaUpdate } from '../types/persona'
+import type { PersonaCreate } from '../types/persona'
 import { Plus, User, MoreFilled, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { formatDateTime } from '../utils/helpers'

@@ -33,7 +33,7 @@ export const useGraphStore = defineStore('graph', () => {
     const nodeMap = new Map<string, GraphNode>()
     const edgeList: GraphEdge[] = []
 
-    memories.forEach((memory, index) => {
+    memories.forEach((memory, _index) => {
       const nodeId = memory.id
       if (!nodeMap.has(nodeId)) {
         nodeMap.set(nodeId, {

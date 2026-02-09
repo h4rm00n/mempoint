@@ -6,7 +6,7 @@
     </div>
     <div class="message-content">
       <div class="message-role">{{ roleLabel }}</div>
-      <div v-if="message.role === 'assistant' && injectedMemories.length > 0" class="injected-memories">
+      <div v-if="message.role === 'assistant' && injectedMemories && injectedMemories.length > 0" class="injected-memories">
         <el-tag size="small" type="info">
           <el-icon><Reading /></el-icon>
           已注入 {{ injectedMemories.length }} 条记忆

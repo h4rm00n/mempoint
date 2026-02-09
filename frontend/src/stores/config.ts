@@ -13,7 +13,8 @@ export const useConfigStore = defineStore('config', () => {
   async function fetchConfig() {
     try {
       loading.value = true
-      config.value = await configAPI.get()
+      const response = await configAPI.get()
+      config.value = response.data
       return config.value
     } catch (error) {
       ElMessage.error('获取配置失败')
@@ -27,10 +28,10 @@ export const useConfigStore = defineStore('config', () => {
   async function updateConfig(data: SystemConfigUpdate) {
     try {
       loading.value = true
-      const updated = await configAPI.update(data)
-      config.value = updated
+      const response = await configAPI.update(data)
+      config.value = response.data
       ElMessage.success('配置更新成功')
-      return updated
+      return response.data
     } catch (error) {
       ElMessage.error('更新配置失败')
       console.error(error)

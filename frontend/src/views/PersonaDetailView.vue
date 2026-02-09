@@ -147,7 +147,7 @@ async function handleSave() {
   }
 }
 
-function viewMemory(id: string) {
+function viewMemory(_id: string) {
   router.push(`/memories`)
 }
 </script>

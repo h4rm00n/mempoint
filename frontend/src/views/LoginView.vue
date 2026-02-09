@@ -107,8 +107,8 @@ const handleLogin = async () => {
     // 验证 API Key 是否有效 - 尝试调用一个简单的 API
     try {
       // 使用 request (axios) 调用 API，自动处理 baseURL 和 Authorization 头
-      const response = await request.get('/v1/personas')
-      
+      await request.get('/v1/personas')
+
       ElMessage.success('登录成功')
       // 跳转到主页
       router.push('/chat')

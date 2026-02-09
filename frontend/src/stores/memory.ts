@@ -19,7 +19,8 @@ export const useMemoryStore = defineStore('memory', () => {
   async function fetchMemories(params?: MemoryListParams) {
     try {
       loading.value = true
-      memories.value = await memoryAPI.list(params)
+      const response = await memoryAPI.list(params)
+      memories.value = response.data
       total.value = memories.value.length
     } catch (error) {
       ElMessage.error('获取记忆列表失败')
@@ -32,7 +33,8 @@ export const useMemoryStore = defineStore('memory', () => {
   async function fetchMemory(id: string) {
     try {
       loading.value = true
-      currentMemory.value = await memoryAPI.get(id)
+      const response = await memoryAPI.get(id)
+      currentMemory.value = response.data
       return currentMemory.value
     } catch (error) {
       ElMessage.error('获取记忆详情失败')
@@ -46,10 +48,10 @@ export const useMemoryStore = defineStore('memory', () => {
   async function createMemory(data: MemoryCreate) {
     try {
       loading.value = true
-      const memory = await memoryAPI.create(data)
-      memories.value.unshift(memory)
+      const response = await memoryAPI.create(data)
+      memories.value.unshift(response.data)
       ElMessage.success('记忆创建成功')
-      return memory
+      return response.data
     } catch (error) {
       ElMessage.error('创建记忆失败')
       console.error(error)
@@ -62,7 +64,8 @@ export const useMemoryStore = defineStore('memory', () => {
   async function updateMemory(id: string, data: MemoryUpdate) {
     try {
       loading.value = true
-      const memory = await memoryAPI.update(id, data)
+      const response = await memoryAPI.update(id, data)
+      const memory = response.data
       const index = memories.value.findIndex(m => m.id === id)
       if (index !== -1) {
         memories.value[index] = memory
@@ -103,8 +106,8 @@ export const useMemoryStore = defineStore('memory', () => {
   async function searchMemories(data: MemorySearchRequest) {
     try {
       loading.value = true
-      const results = await memoryAPI.search(data)
-      searchResults.value = results.map((r: any) => ({
+      const response = await memoryAPI.search(data)
+      searchResults.value = response.data.map((r: any) => ({
         id: r.memory_id,
         persona_id: '',
         type: 'long_term',

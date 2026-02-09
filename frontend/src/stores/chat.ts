@@ -40,7 +40,7 @@ export const useChatStore = defineStore('chat', () => {
   function updateLastMessage(content: string) {
     if (messages.value.length > 0) {
       const lastMsg = messages.value[messages.value.length - 1]
-      if (lastMsg.role === 'assistant') {
+      if (lastMsg && lastMsg.role === 'assistant') {
         lastMsg.content = content
       }
     }

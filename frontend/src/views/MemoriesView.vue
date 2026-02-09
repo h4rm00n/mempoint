@@ -137,15 +137,13 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useMemoryStore } from '../stores/memory'
 import { usePersonaStore } from '../stores/persona'
-import type { MemoryCreate, MemoryUpdate } from '../types/memory'
+import type { MemoryCreate } from '../types/memory'
 import { Plus, Search, Refresh } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { formatDateTime } from '../utils/helpers'
 
-const router = useRouter()
 const memoryStore = useMemoryStore()
 const personaStore = usePersonaStore()
 

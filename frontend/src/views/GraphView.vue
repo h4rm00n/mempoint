@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useGraphStore } from '../stores/graph'
 import { useMemoryStore } from '../stores/memory'

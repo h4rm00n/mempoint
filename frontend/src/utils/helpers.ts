@@ -3,33 +3,33 @@
 /**
  * 格式化日期时间
  */
-export function formatDateTime(dateString: string): string {
-  const date = new Date(dateString)
+export function formatDateTime(date: string | Date): string {
+  const dateObj = typeof date === 'string' ? new Date(date) : date
   const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  
+  const diff = now.getTime() - dateObj.getTime()
+
   // 小于1分钟
   if (diff < 60000) {
     return '刚刚'
   }
-  
+
   // 小于1小时
   if (diff < 3600000) {
     return `${Math.floor(diff / 60000)}分钟前`
   }
-  
+
   // 小于1天
   if (diff < 86400000) {
     return `${Math.floor(diff / 3600000)}小时前`
   }
-  
+
   // 小于7天
   if (diff < 604800000) {
     return `${Math.floor(diff / 86400000)}天前`
   }
-  
+
   // 其他情况
-  return date.toLocaleDateString('zh-CN', {
+  return dateObj.toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -53,7 +53,7 @@ export function debounce<T extends (...args: any[]) => any>(
   func: T,
   wait: number
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null
+  let timeout: ReturnType<typeof setTimeout> | null = null
   return function executedFunction(...args: Parameters<T>) {
     const later = () => {
       timeout = null

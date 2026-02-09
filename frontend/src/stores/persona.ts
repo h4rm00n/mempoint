@@ -24,7 +24,8 @@ export const usePersonaStore = defineStore('persona', () => {
   async function fetchPersonas() {
     try {
       loading.value = true
-      personas.value = await personaAPI.list()
+      const response = await personaAPI.list()
+      personas.value = response.data
     } catch (error) {
       ElMessage.error('获取记忆体列表失败')
       console.error(error)
@@ -36,7 +37,8 @@ export const usePersonaStore = defineStore('persona', () => {
   async function fetchPersona(id: string) {
     try {
       loading.value = true
-      currentPersona.value = await personaAPI.get(id)
+      const response = await personaAPI.get(id)
+      currentPersona.value = response.data
       return currentPersona.value
     } catch (error) {
       ElMessage.error('获取记忆体详情失败')
@@ -50,10 +52,10 @@ export const usePersonaStore = defineStore('persona', () => {
   async function createPersona(data: PersonaCreate) {
     try {
       loading.value = true
-      const persona = await personaAPI.create(data)
-      personas.value.push(persona)
+      const response = await personaAPI.create(data)
+      personas.value.push(response.data)
       ElMessage.success('记忆体创建成功')
-      return persona
+      return response.data
     } catch (error) {
       ElMessage.error('创建记忆体失败')
       console.error(error)
@@ -66,7 +68,8 @@ export const usePersonaStore = defineStore('persona', () => {
   async function updatePersona(id: string, data: PersonaUpdate) {
     try {
       loading.value = true
-      const persona = await personaAPI.update(id, data)
+      const response = await personaAPI.update(id, data)
+      const persona = response.data
       const index = personas.value.findIndex(p => p.id === id)
       if (index !== -1) {
         personas.value[index] = persona

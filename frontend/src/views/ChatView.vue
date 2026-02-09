@@ -57,7 +57,6 @@ import { ref, onMounted, nextTick, watch, computed } from 'vue'
 import { useChatStore } from '../stores/chat'
 import { chatAPI } from '../api/chat'
 import { modelsAPI } from '../api/models'
-import type { ChatMessage } from '../types/chat'
 import type { Model } from '../types/models'
 import ChatMessageComponent from '../components/chat/ChatMessage.vue'
 import ChatInput from '../components/chat/ChatInput.vue'
@@ -80,6 +79,8 @@ const modelGroups = computed(() => {
     const parts = model.id.split('/')
     if (parts.length >= 2) {
       const personaId = parts[0]
+      if (!personaId) return // 跳过空的 personaId
+      
       const llmModel = parts.slice(1).join('/') // 处理可能包含多个斜杠的 llm_model
 
       if (!groups[personaId]) {
@@ -89,7 +90,8 @@ const modelGroups = computed(() => {
         }
       }
 
-      groups[personaId].models.push({
+      const group = groups[personaId]!
+      group.models.push({
         id: model.id,
         llmModel
       })
@@ -112,9 +114,9 @@ watch(() => chatStore.messages, () => {
 async function fetchModels() {
   try {
     const response = await modelsAPI.list()
-    models.value = response.data
+    models.value = response.data.data
     if (models.value.length > 0 && !selectedModel.value) {
-      selectedModel.value = models.value[0].id
+      selectedModel.value = models.value[0]?.id || ''
     }
   } catch (error) {
     ElMessage.error('获取模型列表失败')
@@ -122,7 +124,7 @@ async function fetchModels() {
   }
 }
 
-function handleModelChange(modelId: string) {
+function handleModelChange(_modelId: string) {
   // 可以在这里保存当前选择的模型
   clearChat()
 }

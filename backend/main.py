@@ -3,6 +3,8 @@ FastAPI应用入口
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import importlib
 import os
 
@@ -88,6 +90,15 @@ if mcp_router:
     app.include_router(mcp_router, prefix=settings.API_V1_STR)
 if config_router:
     app.include_router(config_router, prefix=settings.API_V1_STR)
+
+# 静态文件服务 - 服务前端构建的dist目录
+FRONTEND_DIST_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
+if os.path.exists(FRONTEND_DIST_PATH):
+    # 挂载静态资源目录（assets, js, css等）
+    app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST_PATH, "assets")), name="assets")
+    logger.info(f"Serving static files from: {FRONTEND_DIST_PATH}")
+else:
+    logger.warning(f"Frontend dist directory not found: {FRONTEND_DIST_PATH}")
 
 
 @app.on_event("startup")
@@ -201,7 +212,14 @@ async def shutdown_event():
 
 @app.get("/")
 def read_root():
-    """根路径"""
+    """根路径 - 服务前端页面或返回API信息"""
+    # 如果存在frontend/dist/index.html，则服务前端页面
+    if os.path.exists(FRONTEND_DIST_PATH):
+        index_path = os.path.join(FRONTEND_DIST_PATH, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path)
+    
+    # 如果前端页面不存在，返回API信息
     return {
         "message": "Welcome to MemPoint API",
         "version": "0.1.0",
