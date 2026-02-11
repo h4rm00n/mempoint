@@ -92,7 +92,8 @@ class RetrievalStrategy:
             # 增强结果：添加图谱信息
             enhanced_results = await self._enhance_with_graph(
                 results,
-                query_text
+                query_text,
+                persona_id
             )
             logger.info(f"[DEBUG] After enhance_with_graph: {len(enhanced_results)} results")
 
@@ -163,7 +164,8 @@ class RetrievalStrategy:
     async def _enhance_with_graph(
         self,
         results: List[Dict[str, Any]],
-        query_text: str
+        query_text: str,
+        persona_id: Optional[str] = None
     ) -> List[Dict[str, Any]]:
         """
         使用图谱信息增强检索结果（批量查询优化）
@@ -171,6 +173,7 @@ class RetrievalStrategy:
         Args:
             results: 向量检索结果
             query_text: 查询文本
+            persona_id: 记忆体ID
 
         Returns:
             增强后的结果列表
@@ -190,7 +193,7 @@ class RetrievalStrategy:
             try:
                 # 使用并发查询
                 query_tasks = [
-                    graph_store.query_entity(entity_name=entity_id, max_depth=2)
+                    graph_store.query_entity(entity_name=entity_id, persona_id=persona_id or "", max_depth=2)
                     for entity_id in entity_ids
                 ]
                 query_results = await asyncio.gather(*query_tasks, return_exceptions=True)

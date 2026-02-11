@@ -262,7 +262,8 @@ function handleSearch() {
         {
           data: searchData
         }
-      ])
+      ]
+    })
   } else {
     renderGraph()
   }

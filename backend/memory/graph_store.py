@@ -143,13 +143,14 @@ class GraphStore:
         # Entity节点表
         self.conn.execute(f"""
             CREATE NODE TABLE IF NOT EXISTS {settings.KUZU_NODE_TABLE_ENTITY}(
+                id STRING,
                 name STRING,
                 type STRING,
                 description STRING,
                 persona_id STRING,
                 created_at INT64,
                 last_accessed_at INT64,
-                PRIMARY KEY (name, persona_id)
+                PRIMARY KEY (id)
             )
         """)
         
@@ -235,11 +236,16 @@ class GraphStore:
             escaped_persona_id = _escape_string(persona_id)
             escaped_description = _escape_string(description)
 
+            # 生成唯一ID：name|persona_id
+            entity_id = _escape_string(f"{name}|{persona_id}")
+
             self.conn.execute(f"""
-                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_name}', persona_id: '{escaped_persona_id}'}})
+                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{entity_id}'}})
                 ON CREATE SET
+                    e.name = '{escaped_name}',
                     e.type = '{escaped_type}',
                     e.description = '{escaped_description}',
+                    e.persona_id = '{escaped_persona_id}',
                     e.created_at = {current_time},
                     e.last_accessed_at = {current_time}
             """)
@@ -393,8 +399,8 @@ class GraphStore:
 
             if relation_type == settings.KUZU_REL_TABLE_RELATED_TO:
                 self.conn.execute(f"""
-                    MERGE (e1:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}', persona_id: '{escaped_persona_id}'}})
-                    MERGE (e2:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_to_entity}', persona_id: '{escaped_persona_id}'}})
+                    MERGE (e1:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_from_entity}|{escaped_persona_id}'}})
+                    MERGE (e2:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_to_entity}|{escaped_persona_id}'}})
                     MERGE (e1)-[r:{settings.KUZU_REL_TABLE_RELATED_TO}]->(e2)
                     ON CREATE SET
                         r.persona_id = '{escaped_persona_id}',
@@ -403,7 +409,7 @@ class GraphStore:
                 """)
             elif relation_type == settings.KUZU_REL_TABLE_BELONGS_TO:
                 self.conn.execute(f"""
-                    MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_from_entity}', persona_id: '{escaped_persona_id}'}})
+                    MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_from_entity}|{escaped_persona_id}'}})
                     MERGE (c:{settings.KUZU_NODE_TABLE_CONCEPT} {{name: '{escaped_to_entity}'}})
                     MERGE (e)-[r:{settings.KUZU_REL_TABLE_BELONGS_TO}]->(c)
                     ON CREATE SET r.created_at = {current_time}
@@ -419,7 +425,8 @@ class GraphStore:
     async def create_mentions(
         self,
         user_id: str,
-        entity_name: str
+        entity_name: str,
+        persona_id: str
     ) -> bool:
         """
         创建用户提及实体的关系
@@ -427,6 +434,7 @@ class GraphStore:
         Args:
             user_id: 用户ID
             entity_name: 实体名称
+            persona_id: 记忆体ID
 
         Returns:
             是否成功
@@ -446,10 +454,11 @@ class GraphStore:
             # 使用转义后的字符串
             escaped_user_id = _escape_string(user_id)
             escaped_entity_name = _escape_string(entity_name)
+            escaped_persona_id = _escape_string(persona_id)
 
             self.conn.execute(f"""
                 MERGE (u:{settings.KUZU_NODE_TABLE_USER} {{id: '{escaped_user_id}'}})
-                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_entity_name}'}})
+                MERGE (e:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_entity_name}|{escaped_persona_id}'}})
                 MERGE (u)-[r:{settings.KUZU_REL_TABLE_MENTIONS}]->(e)
                 ON CREATE SET r.timestamp = {current_time}
             """)
@@ -494,7 +503,7 @@ class GraphStore:
 
             # 查询实体及其关联
             result = self.conn.execute(f"""
-                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_entity_name}', persona_id: '{escaped_persona_id}'}})
+                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_entity_name}|{escaped_persona_id}'}})
                 CALL (e) *1..{max_depth} {{bfs: true}} (related)
                 RETURN e, related
             """)
@@ -553,12 +562,13 @@ class GraphStore:
             logger.error(f"Failed to query entity: {e}")
             return {"nodes": [], "edges": []}
     
-    async def update_entity_access(self, entity_name: str) -> bool:
+    async def update_entity_access(self, entity_name: str, persona_id: str) -> bool:
         """
         更新实体的最后访问时间
 
         Args:
             entity_name: 实体名称
+            persona_id: 记忆体ID
 
         Returns:
             是否成功
@@ -573,9 +583,10 @@ class GraphStore:
         try:
             # 使用转义后的字符串
             escaped_entity_name = _escape_string(entity_name)
+            escaped_persona_id = _escape_string(persona_id)
 
             self.conn.execute(f"""
-                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{name: '{escaped_entity_name}'}})
+                MATCH (e:{settings.KUZU_NODE_TABLE_ENTITY} {{id: '{escaped_entity_name}|{escaped_persona_id}'}})
                 SET e.last_accessed_at = {current_time}
             """)
 

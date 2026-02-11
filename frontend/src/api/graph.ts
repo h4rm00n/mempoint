@@ -43,7 +43,7 @@ export async function getGraphData(
     params.entity_name = entityName
   }
 
-  const response = await request.get<GraphData>('/graph', { params })
+  const response = await request.get<GraphData>('/v1/graph', { params })
   return response.data
 }
 
@@ -52,7 +52,7 @@ export async function getGraphData(
  * @param limit 返回数量限制
  */
 export async function getAllEntities(limit: number = 100): Promise<GraphNode[]> {
-  const response = await request.get<GraphNode[]>('/graph/entities', {
+  const response = await request.get<GraphNode[]>('/v1/graph/entities', {
     params: { limit }
   })
   return response.data
@@ -67,7 +67,7 @@ export async function getEntityRelations(
   entityName: string,
   maxDepth: number = 2
 ): Promise<GraphData> {
-  const response = await request.get<GraphData>(`/graph/entities/${entityName}`, {
+  const response = await request.get<GraphData>(`/v1/graph/entities/${entityName}`, {
     params: { max_depth: maxDepth }
   })
   return response.data
