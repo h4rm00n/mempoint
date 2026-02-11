@@ -89,7 +89,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
 import { useGraphStore } from '../stores/graph'
 import { usePersonaStore } from '../stores/persona'
@@ -101,7 +101,7 @@ const personaStore = usePersonaStore()
 
 const graphRef = ref<HTMLElement>()
 const chartInstance = ref<echarts.ECharts>()
-const filterForm = ref({
+const filterForm = reactive({
   persona_id: '',
   maxDepth: 2
 })
@@ -128,6 +128,13 @@ const typeLabels: Record<string, string> = {
 
 onMounted(async () => {
   await personaStore.fetchPersonas()
+  // 如果有记忆体且未选择，默认选择第一个
+  if (!filterForm.persona_id && personaStore.personas.length > 0) {
+    const firstPersona = personaStore.personas[0]
+    if (firstPersona) {
+      filterForm.persona_id = firstPersona.id
+    }
+  }
   await loadGraphData()
   window.addEventListener('resize', handleResize)
 })
@@ -140,11 +147,11 @@ onBeforeUnmount(() => {
 })
 
 async function loadGraphData() {
-  if (!filterForm.value.persona_id) {
+  if (!filterForm.persona_id) {
     ElMessage.warning('请先选择记忆体')
     return
   }
-  await graphStore.fetchGraphData(filterForm.value.persona_id, undefined, filterForm.value.maxDepth)
+  await graphStore.fetchGraphData(filterForm.persona_id, undefined, filterForm.maxDepth)
   renderGraph()
 }
 
