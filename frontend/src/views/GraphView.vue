@@ -27,7 +27,6 @@
           <el-select
             v-model="filterForm.persona_id"
             placeholder="选择记忆体"
-            clearable
             @change="loadGraphData"
           >
             <el-option
@@ -102,7 +101,7 @@ const personaStore = usePersonaStore()
 const graphRef = ref<HTMLElement>()
 const chartInstance = ref<echarts.ECharts>()
 const filterForm = reactive({
-  persona_id: '',
+  persona_id: null as string | null,
   maxDepth: 2
 })
 

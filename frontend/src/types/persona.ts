@@ -22,7 +22,7 @@ export interface PersonaResponse {
 
 export interface PersonaListItem {
   id: string
-  name: string
+  name?: string
   description: string
   created_at: string
   updated_at: string

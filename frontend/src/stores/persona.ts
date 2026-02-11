@@ -13,7 +13,7 @@ export const usePersonaStore = defineStore('persona', () => {
   // 计算属性
   const personaOptions = computed(() =>
     personas.value.map(p => ({
-      label: p.name,
+      label: p.name || p.id,
       value: p.id
     }))
   )
